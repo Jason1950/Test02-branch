@@ -256,7 +256,7 @@ class Dsp(object):
         hr_fft = f_bpm[PSD_max_pos]
         return hr_fft, np.max(Pxx_den)
 
-    def sb_hr_FPP(self, data, fps=20, sb_peak_limit  = 0.65, sb_pass_limit = 10, csv_save_state=True, writer= None, time_stamp= None, orz= None, face_pos = None, info_show=True,sbhr0 = 0):
+    def sb_hr_FPP(self, data, fps=20, sb_peak_limit  = 0.65, sb_pass_limit = 10, csv_save_state=True, writer= None, writer2= None, time_stamp= None, orz= None, face_pos = None, info_show=True,sbhr0 = 0):
     # def sb_hr_FPP(self, data, fps=20, sb_peak_limit  = 0.65, sb_pass_limit = 10, csv_save_state=True, writer= None, time_stamp= None, orz= None, face_pos = None, info_show=True):
         # FPP : FFT、Peak、Pass
         # sb_hr_fft, sb_psd_max = self.hr_fft_cal(data, fps)
@@ -264,6 +264,11 @@ class Dsp(object):
         self.face_xy = face_pos 
         sb_hr_fft, sb_psd_max , total_hr, peak_index = self.hr_spec_all_fft_cal(data, fps, info_show)
         
+
+
+        sb_hr_peak = self.hr_peak_count(data.copy(), fps, self.size, sb_peak_limit)	# another heart rate result based on peak detection
+        sb_pass = (abs(sb_hr_fft - sb_hr_peak) < sb_pass_limit)	# small error between HRpeak - HRpsd
+
         if csv_save_state:
             csv_list=[]
             csv_list.append(time_stamp)
@@ -272,13 +277,33 @@ class Dsp(object):
             csv_list.append(move_distance)
             
             csv_list.append(orz)
-            csv_list.append(sbhr0)
+            # csv_list.append(sb_hr_peak)
+            # csv_list.append(sbhr0)
+            if (sb_pass):
+                for i in range(len(total_hr)):
+                    csv_list.append(str(total_hr[i]))
+            else:
+                csv_list.append(0)
+            writer2.writerow(csv_list)
+        if csv_save_state:
+            csv_list=[]
+            csv_list.append(time_stamp)
+            if move_distance > 80:
+                move_distance = 0 
+            csv_list.append(move_distance)
+            
+            csv_list.append(orz)
+            # csv_list.append(sb_hr_peak)
+            # csv_list.append(sbhr0)
+           
             for i in range(len(total_hr)):
                 csv_list.append(str(total_hr[i]))
+
             writer.writerow(csv_list)
 
-        sb_hr_peak = self.hr_peak_count(data.copy(), fps, self.size, sb_peak_limit)	# another heart rate result based on peak detection
-        sb_pass = (abs(sb_hr_fft - sb_hr_peak) < sb_pass_limit)	# small error between HRpeak - HRpsd
+        if not(sb_pass):
+            sb_hr_fft = 0
+
         return sb_hr_fft, sb_hr_peak, sb_pass, total_hr, move_distance
 
     def pca_hr_FPP(self, data, fps=20, pca_peak_limit  = 0.65, pca_pass_limit = 10):

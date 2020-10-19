@@ -22,7 +22,7 @@ class HR(object):
         #video and excel save !
         # self.Csv_Save_State = False
         # self.Save_Video_File_state = False    
-        self.Csv_Save_State = False
+        self.Csv_Save_State = True
         self.Save_Video_File_state = False  
 
         #other state !
@@ -87,9 +87,16 @@ class HR(object):
             wfp = open("./excel_hr_record/output"+file_save_time+".csv", "w", newline='')
             self.writer = csv.writer(wfp)
             self.writer.writerow(['datetime','polar_hr','sstc_hr','max fft','sec fft','third fft','4th fft'])	
+            
+            wfp2 = open("./excel_hr_record/output"+file_save_time+"_hrpass.csv", "w", newline='')
+            self.writer2 = csv.writer(wfp2)
+            self.writer2.writerow(['datetime','polar_hr','sstc_hr','max fft','sec fft','third fft','4th fft'])	
+        
+
         else:
             self.writer = None    
-    
+            self.writer2 = None
+
     def J_fps(self):
         if abs(time.time()-self.temp_time) > 1:
             self.fps = self.index
@@ -208,6 +215,7 @@ class HR(object):
                                         , self.fps, 0.65, 10
                                         , self.Csv_Save_State
                                         , self.writer
+                                        , self.writer2
                                         , write_time
                                         , str(out_orz)
                                         , face_x_y
