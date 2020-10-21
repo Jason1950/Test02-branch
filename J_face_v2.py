@@ -18,6 +18,7 @@ class Face(object):
         self.fail_state = False      # dlib box ready but face detect fail !
         self.LM_detect_state = True  # tracking not fail and small landmark distance => change to tracking
         self.tracker_flow_state = False  # cv2 TrackerMedianFlow state
+        self.first_start = True
 
         #frame parameter
         self.frame_count = 0
@@ -96,7 +97,8 @@ class Face(object):
             # cv2.imshow('Scan Face Region', xddd)
             rect = dlib.rectangle(0, 0, int(face_rectangle.shape[0]), int(face_rectangle.shape[1]))	# transfer face rectangle to dlib format
             
-            if WaitKey == ord('s') : #or flip_state:	# press s => cancel heart rate measurement
+        
+            if self.first_start or  WaitKey == ord('s') : #or flip_state:	# press s => cancel heart rate measurement
                 print("ok s pressed")
                 # face tracker initialization
                 self.tracker = cv2.TrackerMedianFlow_create()
@@ -104,6 +106,8 @@ class Face(object):
                 # start to measure heart rate => re-initialize parameters    
                 self.box_state = True       
                 self.frame_count = 1     
+                self.first_start = False
+
 
 
             elif WaitKey == 27:

@@ -170,6 +170,7 @@ class HR(object):
                 out_orz = int(round(np.mean(self.temp_hr)))
             
             else:
+                # print(self.test_ii, ' , self.sb_hr_buufer : ', self.sb_hr_buufer)
                 orz = round(np.mean(self.sb_hr_buufer))
                 if not np.isnan(orz):
                       orz = int(orz)
