@@ -5,6 +5,7 @@ import time
 import csv
 import screeninfo
 import warnings
+import paho.mqtt.client as mqtt
 
 warnings.filterwarnings("ignore", category=RuntimeWarning) 
 warnings.filterwarnings("ignore", category=UserWarning) 
@@ -31,6 +32,7 @@ class HR(object):
         self.Debug_Info_Show_state = False
 
         self.camera_arg()
+        self.mqtt_init()
         self.full_screen_background(screen_num=1)
         self.buffer_size = 128
         self.sb_hr_buufer = []
@@ -62,6 +64,11 @@ class HR(object):
         self.index = 0
         self.fps = 0
         self.fps_state = False       
+    
+    def mqtt_init(self):
+        self.client = mqtt.Client()
+        self.client.connect('LocalHost', 1883, 30)
+        # self.client.connect('192.168.0.14', 1883, 30)
 
     def camera_arg(self):
         ## webcam index self.arg : 0 internal ; 1 external ;
@@ -104,6 +111,7 @@ class HR(object):
             self.fps_state = True
             self.index = 0 
             self.temp_time = time.time()
+            
 
     def main(self):
         window_name = 'Heart Rate ' + self.window_name
@@ -114,6 +122,7 @@ class HR(object):
 
    
         self.test_ii = 0
+        # out_orz = 0
         while True:
             
             self.fps_state = False
@@ -142,6 +151,7 @@ class HR(object):
             # frame, face_segment, face_x_y, dsp_state, fail_state = self.face.face_detect(frame[y1-redundary:y2+redundary,x1-redundary:x2+redundary])
             
             if self.fps_state:
+                
                 if len(self.temp_hr) < 15:
                     temp0 = 0 if np.isnan(round(np.mean(self.sb_hr_buufer))) else int(round(np.mean(self.sb_hr_buufer)))
                     self.temp_hr.append( temp0 ) 
@@ -167,7 +177,8 @@ class HR(object):
                 cv2.putText(frame, (f"  HR : {(orz)} " )
                                         ,(face_x_y[0]-50,face_x_y[1]-25), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (100,0,255), 2, cv2.LINE_AA)            
                 out_orz = orz
-
+            if self.fps_state and (not np.isnan(out_orz)):
+                self.client.publish("heartrate", out_orz)
             cv2.imshow(window_name, frame)
 
             ## all parameter be default !
