@@ -146,6 +146,7 @@ class Dsp(object):
         return temp
 
     def detect_spec_number(self, f, x, limit, show = False):
+        x_oringinal = x.copy()
         x = (x-np.min(x)) / (np.max(x)- np.min(x))
         #this is ok!!!!!!!!
         #peaks, _ = find_peaks(x,distance=10) # height = self.peak_height_limit)
@@ -154,6 +155,8 @@ class Dsp(object):
         hr_new = []
         hr_spec_value_new = []
         hr_spec_value = []
+
+        spec_record = []
         if len(peaks) < 4:
             range_peak = len(peaks)
         else:
@@ -161,9 +164,12 @@ class Dsp(object):
         
         for i in range(range_peak):
             hr_spec_value.append(round(x[peaks[i]],3))
+            spec_record.append(x_oringinal[peaks[i]])
             hr.append(round(f[peaks[i]],1))
         x_pos = np.argmax(x)
-
+        
+        spec_record = np.sort(spec_record) 
+        spec_record = spec_record[::-1]
         # A 排序的依據 B是被變動的
         # https://blog.csdn.net/qq_17753903/article/details/82634146
         if show:
@@ -181,7 +187,7 @@ class Dsp(object):
             print('hr.sort : ', hr_new)
             print('oh value : ',hr_spec_value)
             print('oh value.sort : ',hr_spec_value_new,'\n\n')
-        return hr_new, peaks #hr_new is sorted!!!
+        return hr_new, peaks, spec_record #hr_new is sorted!!!
 
     def hr_peak_count(self, data, fps, size, limit):
         hr_peak = 0
@@ -221,12 +227,13 @@ class Dsp(object):
 
         PSD_max_pos = np.argmax(Pxx_den)
         total_hr = []
-        total_hr, peak_index = self.detect_spec_number(f_bpm, Pxx_den, PSD_max_pos*0.3, show=info_show)
+        spec_record = []
+        total_hr, peak_index, spec_record = self.detect_spec_number(f_bpm, Pxx_den, PSD_max_pos*0.3, show=info_show)
         
         #print('max psd pos : ',PSD_max_pos,'\n\n')
         hr_fft = f_bpm[PSD_max_pos]
 
-        return hr_fft, np.max(Pxx_den), total_hr, peak_index
+        return hr_fft, np.max(Pxx_den), total_hr, peak_index, spec_record
 
     def hr_spec_all_fft_cal2(self, data, fps):
         hr_fft = 0
@@ -262,7 +269,7 @@ class Dsp(object):
         # sb_hr_fft, sb_psd_max = self.hr_fft_cal(data, fps)
         move_distance = np.sqrt((self.face_xy[0]-face_pos[0])**2+(self.face_xy[1]-face_pos[1])**2) 
         self.face_xy = face_pos 
-        sb_hr_fft, sb_psd_max , total_hr, peak_index = self.hr_spec_all_fft_cal(data, fps, info_show)
+        sb_hr_fft, sb_psd_max , total_hr, peak_index, spec_record = self.hr_spec_all_fft_cal(data, fps, info_show)
         
 
 
@@ -282,9 +289,20 @@ class Dsp(object):
             if (sb_pass):
                 for i in range(len(total_hr)):
                     csv_list.append(str(total_hr[i]))
+                if len(total_hr) < 4:
+                    for i in range(4-len(total_hr)):
+                        csv_list.append(0)
+                        
+                for i in range(len(total_hr)):
+                    csv_list.append(str(spec_record[i]))
+                if len(total_hr) < 4:
+                    for i in range(4-len(total_hr)):
+                        csv_list.append(0)                
             else:
-                csv_list.append(0)
+                for i in range(4):
+                    csv_list.append(0)
             writer2.writerow(csv_list)
+
         if csv_save_state:
             csv_list=[]
             csv_list.append(time_stamp)
@@ -298,6 +316,16 @@ class Dsp(object):
            
             for i in range(len(total_hr)):
                 csv_list.append(str(total_hr[i]))
+            if len(total_hr) < 4:
+                for i in range(4-len(total_hr)):
+                    csv_list.append(0)
+
+            for i in range(len(total_hr)):
+                csv_list.append(str(spec_record[i]))
+            if len(total_hr) < 4:
+                for i in range(4-len(total_hr)):
+                    csv_list.append(0)
+            # spec_record
 
             writer.writerow(csv_list)
 
