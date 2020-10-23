@@ -21,6 +21,7 @@ class Face(object):
         self.first_start = True
 
         #frame parameter
+        self.fail_times = 0
         self.frame_count = 0
         self.pos1 = [-1,-1] 
         self.pos2 = [-1,-1]
@@ -211,6 +212,11 @@ class Face(object):
                 self.pos1[0],self.pos1[1] = int(self.old_bbox[0]), int(self.old_bbox[1])
                 self.pos2[0],self.pos2[1] = int(self.old_bbox[0] + self.old_bbox[2]), int(self.old_bbox[1] + self.old_bbox[3])
                 self.fail_state = True
+                self.fail_times += 1
+                if self.fail_times > 70 :
+                    self.fail_times = 0 
+                    self.box_state = False
+                    self.first_start = True
             
             ## ===================
             ## show frame
