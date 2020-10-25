@@ -21,6 +21,7 @@ class Face(object):
         self.first_start = True
 
         #frame parameter
+        self.fps_sec = 0
         self.fail_times = 0
         self.frame_count = 0
         self.pos1 = [-1,-1] 
@@ -37,8 +38,9 @@ class Face(object):
                         maxLevel = 2,
                         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
-    def face_detect(self,frame):
+    def face_detect(self,frame, fps_state):
         #init state and parameter
+        self.fps_state = fps_state
         self.fail_state = False 
         self.detect_face_when_moving = 5
 
@@ -151,6 +153,12 @@ class Face(object):
             #print('LM_68_old : ',self.LM_68_old)
             print('LM_68_old copy ok !')  #[[245 426] ...... [262 424] [271 425] [281 424] [295 428] [280 426] [271 427] [262 425]]
         else:
+            if self.fps_state :
+                    self.fps_sec +=1
+            if self.fps_sec >5 :
+                    self.fps_sec = 0
+                    self.fail_times = 0
+
             # Still keep detecting landmark to prevent landmark tracking fail
             LM_68 = self.predictor(frame_gray, rect)
             LM_68 = face_utils.shape_to_np(LM_68)	# dlib form to numpy
@@ -205,7 +213,7 @@ class Face(object):
         
             else :
                 # Face bounding box tracking failure => hold previous bounding box result
-                print("TRACK FAIL!!")
+                print("TRACK FAIL!! ", self.fail_times)
                 # Keep previous face bounding box result
                 #p1 = (int(self.old_bbox[0]), int(self.old_bbox[1]))
                 #p2 = (int(self.old_bbox[0] + self.old_bbox[2]), int(self.old_bbox[1] + self.old_bbox[3]))
@@ -213,6 +221,13 @@ class Face(object):
                 self.pos2[0],self.pos2[1] = int(self.old_bbox[0] + self.old_bbox[2]), int(self.old_bbox[1] + self.old_bbox[3])
                 self.fail_state = True
                 self.fail_times += 1
+                
+                # this is test  for sec count
+                
+                
+
+                
+
                 if self.fail_times > 70 :
                     self.fail_times = 0 
                     self.box_state = False
