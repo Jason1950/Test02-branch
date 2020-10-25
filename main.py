@@ -23,7 +23,7 @@ class HR(object):
         #video and excel save !
         # self.Csv_Save_State = False
         # self.Save_Video_File_state = False    
-        self.Csv_Save_State = True
+        self.Csv_Save_State = False
         self.Save_Video_File_state = False  
 
         #other state !
@@ -63,8 +63,10 @@ class HR(object):
         self.temp_time = time.time()
         self.index = 0
         self.fps = 0
-        self.fps_state = False       
-    
+        self.fps_state = False      
+        self.fps_sec = 0 
+        self.sb_stable_fail_times = 0
+
     def mqtt_init(self):
         self.client = mqtt.Client()
         self.client.connect('LocalHost', 1883, 30)
@@ -144,7 +146,7 @@ class HR(object):
                     continue
             
             # frame_show = frame.copy()
-            frame, face_segment, face_x_y, dsp_state, fail_state = self.face.face_detect(frame)
+            frame, face_segment, face_x_y, dsp_state, fail_state = self.face.face_detect(frame, self.fps_state)
             
             face_segment_copy = face_segment.copy()
             
@@ -234,7 +236,26 @@ class HR(object):
                                         , self.Debug_Spectrum_Info_state  #) ## Info Show is test hr , max hr ,sec hr .... spectrum
                                         , sb_hr0 ) ## Info Show is test hr , max hr ,sec hr .... spectrum
                 self.sb_stable_state = self.dsp.sb_hr_filter(self.sb_hr_buufer, round(self.sb_hr_fft,1), self.sb_pass, self.sb_total_hr)
-            
+                
+                ### added 1025
+                ### for test featrue not clear
+                if self.fps_state :
+                    self.fps_sec +=1
+                if self.fps_sec > 4 :
+                    self.fps_sec = 0
+                    self.sb_stable_fail_times = 0
+                if not self.sb_stable_state :
+                    self.sb_stable_fail_times += 1
+                if self.sb_stable_fail_times > 50:
+                    self.sb_hr_buufer = []
+                    self.temp_hr = [0]
+                    self.sb_hr_fft = 0
+                    self.sb_hr_peak = 0
+                ###
+                ### end ! 
+                    
+                
+
                 if self.fps_state and self.Debug_Info_Show_state:
                     print(f'fps {self.fps} , sb hr : {round(self.sb_hr_fft)} , {round(self.sb_hr_peak)} , pass: {self.sb_pass} 。  ')
                     #print(self.sb_hr_buufer)
